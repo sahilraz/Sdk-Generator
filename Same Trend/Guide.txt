@@ -1,0 +1,125 @@
+# SAME TREND SDK - SETUP GUIDE
+
+Version: 1.0
+
+==================================================
+STEP 1 - EXTRACT THE SDK
+========================
+
+1. Locate the downloaded ZIP file.
+2. Extract the ZIP file using your preferred archive tool.
+3. Open the extracted folder.
+
+Do NOT modify any SDK files unless specifically instructed by QuantumApi documentation.
+
+==================================================
+STEP 2 - INSTALL THE SDK
+========================
+
+1. Open your game project.
+2. Locate the ROOT DIRECTORY of your game.
+
+The ROOT DIRECTORY is the folder where your existing Wingo API files are located.
+
+3. Copy ALL files and folders from the extracted SDK package.
+4. Paste them directly into your game's ROOT DIRECTORY.
+
+Example:
+
+Game Root/
+├── api.php
+├── config.php
+├── wingo.php
+├── trend.php
+├── quantum-connect.php
+└── other game files
+
+All SDK files must remain in their original structure.
+
+==================================================
+STEP 3 - WHITELIST YOUR DOMAIN
+==============================
+
+After installing the SDK:
+
+1. Open your QuantumApi dashboard.
+2. Navigate to Domain Management / Whitelisting.
+3. Add your website domain.
+4. Add your server IP address.
+5. Save the configuration.
+
+IMPORTANT:
+
+The domain and IP address entered in the dashboard MUST EXACTLY MATCH the domain and IP from which your game is running.
+
+Examples:
+
+Correct:
+Domain: example.com
+IP: 123.123.123.123
+
+Incorrect:
+Domain: [www.example.com](http://www.example.com)
+IP: 123.123.123.123
+
+Incorrect:
+Domain: example.com
+IP: 111.111.111.111
+
+Even a small mismatch may cause authentication failure and prevent the SDK from functioning.
+
+==================================================
+TROUBLESHOOTING
+===============
+
+SDK not working?
+
+Check the following:
+
+✓ Valid API key is being used.
+✓ SDK files are placed in the correct root directory.
+✓ Domain is correctly whitelisted.
+✓ IP address is correctly whitelisted.
+✓ Domain and IP match exactly with your server configuration.
+✓ No SDK files were modified or deleted.
+
+==================================================
+SECURITY RECOMMENDATIONS
+========================
+
+* Keep your API key private.
+* Never publish your API key in public repositories.
+* Never share SDK files containing active API credentials.
+* Regularly review your domain whitelist settings.
+* Immediately revoke compromised API keys.
+
+==================================================
+COPYRIGHT & LICENSE NOTICE
+==========================
+
+Copyright © QuantumApi. All Rights Reserved.
+
+This SDK is licensed only for authorized users possessing a valid QuantumApi account and API key.
+
+STRICTLY PROHIBITED:
+
+✗ Redistributing the SDK.
+✗ Selling the SDK.
+✗ Sharing generated SDK packages with third parties.
+✗ Removing copyright notices.
+✗ Modifying the SDK to bypass licensing, domain validation, IP validation, or security mechanisms.
+✗ Reverse engineering, decompiling, or attempting to circumvent access controls.
+✗ Using a single licensed SDK installation across unauthorized domains or servers.
+
+Violation of these terms may result in:
+
+* Immediate API key suspension.
+* Domain blacklisting.
+* Permanent account termination.
+* Legal action where applicable.
+
+By downloading, installing, or using this SDK, you agree to comply with all applicable QuantumApi terms, licensing requirements, and usage policies.
+
+For support and updates, please refer to the official QuantumApi platform.
+
+Owner: DevilBoy (@ImJust_Joking)
