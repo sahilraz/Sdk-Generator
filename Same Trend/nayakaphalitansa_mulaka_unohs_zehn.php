@@ -23,22 +23,34 @@ if (!isset($conn)) {
 $game_name = 'wingo';
 $game_param = 30;
 require_once __DIR__ . '/quantum-connect.php';
+
 			// TOGGLE (game_settings_zehn.toggle): 0 = use external API number/colour/premium; 1 = ignore API digits — use manual table or random
-			$toggleQuery = $conn->query("SELECT toggle FROM game_settings_zehn WHERE id = 1 LIMIT 1");
-			$toggleRow = ($toggleQuery && mysqli_num_rows($toggleQuery) > 0) ? $toggleQuery->fetch_assoc() : null;
-			$toggle = ($toggleRow) ? (int)$toggleRow['toggle'] : 0;
+			$modeQuery = $conn->query("SELECT operation_mode FROM game_settings WHERE id = 1 LIMIT 1");
+			$modeRow = ($modeQuery && $modeQuery->num_rows > 0) ? $modeQuery->fetch_assoc() : null;
+			$operation_mode = $modeRow['operation_mode'] ?? 'api';
+			$toggle = ($operation_mode === 'manual') ? 1 : 0;
 
 			// toggle=1 OR API fail => manual/random path (skip nahi hoga).
 			if ($toggle == 1 || !$apiFetchOk) {
 				// Manual / random result path
-				// Pehle hastacalita_phalitansa_zehn check karo (manual set number)
-				$manualQuery = $conn->query("SELECT sankhye FROM hastacalita_phalitansa_zehn WHERE sthiti='1' LIMIT 1");
-				if ($manualQuery && mysqli_num_rows($manualQuery) > 0) {
-					$manualRow = $manualQuery->fetch_assoc();
-					$yadrcchika = $kadimesucyanka = (int)$manualRow['sankhye'];
-				} else {
-					$yadrcchika = $kadimesucyanka = rand(0, 9);
+				$yadrcchika = -1;
+				
+				if ($toggle == 1) {
+					$manualQuery = $conn->query("SELECT sankhye FROM hastacalita_phalitansa_zehn WHERE sthiti='1' LIMIT 1");
+					if ($manualQuery && mysqli_num_rows($manualQuery) > 0) {
+						$manualRow = $manualQuery->fetch_assoc();
+						if (isset($manualRow['sankhye']) && is_numeric($manualRow['sankhye'])) {
+							$yadrcchika = (int)$manualRow['sankhye'];
+						}
+						// Change status to 0 so the manual number is not reused permanently
+						$conn->query("UPDATE hastacalita_phalitansa_zehn SET sthiti='0' WHERE sthiti='1'");
+					}
 				}
+				
+				if ($yadrcchika === -1) {
+					$yadrcchika = rand(0, 9);
+				}
+				$kadimesucyanka = $yadrcchika;
 				if($yadrcchika == 0){ $banna = 'red,violet'; }
 				else if($yadrcchika == 5){ $banna = 'green,violet'; }
 				else if($yadrcchika == 1 || $yadrcchika == 3 || $yadrcchika == 7 || $yadrcchika == 9){ $banna = 'green'; }

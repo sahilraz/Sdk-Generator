@@ -3,23 +3,31 @@ $game_param = 5;
 $game_name = 'wingo';
 require_once __DIR__ . '/quantum-connect.php';
 
-if (!$apiFetchOk) {
-    die("API Error or no items found in the data list");
-}
-	// TOGGLE: 0 = ON (API result), 1 = OFF (Normal result)
-	$toggleQuery = $conn->query("SELECT toggle FROM game_settings_zehn WHERE id = 1 LIMIT 1");
-	$toggleRow = ($toggleQuery && mysqli_num_rows($toggleQuery) > 0) ? $toggleQuery->fetch_assoc() : null;
-	$toggle = ($toggleRow) ? (int)$toggleRow['toggle'] : 0;
+	$modeQuery = $conn->query("SELECT operation_mode FROM game_settings WHERE id = 1 LIMIT 1");
+	$modeRow = ($modeQuery && $modeQuery->num_rows > 0) ? $modeQuery->fetch_assoc() : null;
+	$operation_mode = $modeRow['operation_mode'] ?? 'api';
+	$toggle = ($operation_mode === 'manual') ? 1 : 0;
 
-	if ($toggle == 1) {
-		// 1 = OFF: Normal result
-		$manualQuery = $conn->query("SELECT sankhye FROM hastacalita_phalitansa_funf WHERE sthiti='1' LIMIT 1");
-		if ($manualQuery && mysqli_num_rows($manualQuery) > 0) {
-			$manualRow = $manualQuery->fetch_assoc();
-			$yadrcchika = $kadimesucyanka = (int)$manualRow['sankhye'];
-		} else {
-			$yadrcchika = $kadimesucyanka = rand(0, 9);
+	if ($toggle == 1 || !$apiFetchOk) {
+		// Manual / random result path
+		$yadrcchika = -1;
+		
+		if ($toggle == 1) {
+			$manualQuery = $conn->query("SELECT sankhye FROM hastacalita_phalitansa_funf WHERE sthiti='1' LIMIT 1");
+			if ($manualQuery && mysqli_num_rows($manualQuery) > 0) {
+				$manualRow = $manualQuery->fetch_assoc();
+				if (isset($manualRow['sankhye']) && is_numeric($manualRow['sankhye'])) {
+					$yadrcchika = (int)$manualRow['sankhye'];
+				}
+				// Change status to 0 so the manual number is not reused permanently
+				$conn->query("UPDATE hastacalita_phalitansa_funf SET sthiti='0' WHERE sthiti='1'");
+			}
 		}
+		
+		if ($yadrcchika === -1) {
+			$yadrcchika = rand(0, 9);
+		}
+		$kadimesucyanka = $yadrcchika;
 		if($yadrcchika == 0){ $banna = 'red,violet'; }
 		else if($yadrcchika == 5){ $banna = 'green,violet'; }
 		else if($yadrcchika == 1 || $yadrcchika == 3 || $yadrcchika == 7 || $yadrcchika == 9){ $banna = 'green'; }
@@ -30,16 +38,26 @@ if (!$apiFetchOk) {
 		$yadrcchikasankhye = (int)implode('', $yadrcchikasanke);
 	} else {
 		// 0 = ON: WinGo API ka real result
-		$yadrcchika = $kadimesucyanka = isset($apidata['number']) ? $apidata['number'] : rand(0, 9);
+		$yadrcchika = $kadimesucyanka = isset($apidata['number']) ? (int)$apidata['number'] : rand(0, 9);
 		$banna = isset($apidata['color']) ? $apidata['color'] :
 				($yadrcchika == 0 ? 'red,violet' :
 				($yadrcchika == 5 ? 'green,violet' :
 				(in_array($yadrcchika, [1,3,7,9]) ? 'green' : 'red')));
-		$yadrcchikasankhye = isset($apidata['premium']) ? $apidata['premium'] :
+		$yadrcchikasankhye = isset($apidata['premium']) && $apidata['premium'] !== '' ? $apidata['premium'] :
 					(int)(rand(1,9).rand(1,9).rand(1,9).rand(1,9).$yadrcchika);
 	}
 	$dinanka = date('Y-m-d H:i:s');
-	$samasyesreni['atadaaidi']=$apidata['issueNumber'];
+	$apiIssue = isset($apidata['issueNumber']) ? preg_replace('/\D/', '', (string) $apidata['issueNumber']) : '';
+	$localIssue = '';
+	$localIssueRes = $conn->query("SELECT atadaaidi FROM gelluonduhogu_funf ORDER BY kramasankhye DESC LIMIT 1");
+	if ($localIssueRes && mysqli_num_rows($localIssueRes) > 0) {
+		$localIssueRow = $localIssueRes->fetch_assoc();
+		$localIssue = preg_replace('/\D/', '', (string) ($localIssueRow['atadaaidi'] ?? ''));
+	}
+	$samasyesreni['atadaaidi'] = ($localIssue !== '') ? $localIssue : $apiIssue;
+	if ($samasyesreni['atadaaidi'] === '') {
+		exit;
+	}
 
 		// RACE CONDITION FIX: MySQL named lock se ensure karo sirf ek process chale
 		$lockName = 'funf_period_' . $samasyesreni['atadaaidi'];

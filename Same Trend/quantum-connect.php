@@ -8,11 +8,33 @@
  * =========================================================
  */
 // quantum-connect.php
-// This universal file connects to the API and fetches the latest issue data.
+
+$conn = new mysqli("localhost", "root", "", "quantum_api");
+if ($conn->connect_error) {
+    die($conn->connect_error);
+}
+
+$conn->query("
+    CREATE TABLE IF NOT EXISTS game_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        operation_mode ENUM('api','manual') NOT NULL DEFAULT 'api'
+    )
+");
+
+$result = $conn->query("SELECT COUNT(*) AS total FROM game_settings");
+$row = $result->fetch_assoc();
+
+if ($row['total'] == 0) {
+    $conn->query("INSERT INTO game_settings (operation_mode) VALUES ('api')");
+}
+
+$conn->close();
 
 // Define common API base URL and API Key
 $api_base_url = "https://quantum-api.ajibcomedy.workers.dev/";
 $api_key = "YOUR_API_KEY";
+
+
 
 if (!isset($game_param)) {
     die("Error: \$game_param is not defined.");
