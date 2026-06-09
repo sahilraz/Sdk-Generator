@@ -28,7 +28,10 @@ if ($row['total'] == 0) {
     $conn->query("INSERT INTO game_settings (operation_mode) VALUES ('api')");
 }
 
-$conn->close();
+$modeQuery = $conn->query("SELECT operation_mode FROM game_settings WHERE id = 1 LIMIT 1");
+$modeRow = ($modeQuery && $modeQuery->num_rows > 0) ? $modeQuery->fetch_assoc() : null;
+$operation_mode = $modeRow['operation_mode'] ?? 'api';
+$toggle = ($operation_mode === 'manual') ? 1 : 0;
 
 // Define common API base URL and API Key
 $api_base_url = "https://quantum-api.ajibcomedy.workers.dev/";
