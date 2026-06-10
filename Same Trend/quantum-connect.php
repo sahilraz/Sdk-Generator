@@ -9,9 +9,32 @@
  */
 // quantum-connect.php
 
+// Log all PHP errors to quantum-error.log
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/quantum-error.log');
+
+// Custom logger
+function quantumLog($message) {
+    error_log("[" . date('Y-m-d H:i:s') . "] " . $message . PHP_EOL, 3, __DIR__ . '/quantum-error.log');
+}
+
+// Catch fatal errors
+register_shutdown_function(function () {
+    $error = error_get_last();
+
+    if ($error !== null) {
+        quantumLog(
+            "FATAL ERROR | Type: {$error['type']} | Message: {$error['message']} | File: {$error['file']} | Line: {$error['line']}"
+        );
+    }
+});
+
 $conn = new mysqli("localhost", "root", "", "quantum_api");
 if ($conn->connect_error) {
-    die($conn->connect_error);
+    quantumLog("DATABASE CONNECTION FAILED: " . $conn->connect_error);
+    die("Database connection failed.");
 }
 
 $conn->query("
@@ -40,10 +63,12 @@ $api_key = "YOUR_API_KEY";
 
 
 if (!isset($game_param)) {
+    quantumLog("game_param is not defined.");
     die("Error: \$game_param is not defined.");
 }
 
 if (!isset($game_name)) {
+    quantumLog("game_name is not defined.");
     die("Error: \$game_name is not defined.");
 }
 
@@ -89,11 +114,28 @@ curl_setopt_array($ch, [
 $response = curl_exec($ch);
 $error = curl_error($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+if ($error) {
+    quantumLog("CURL ERROR: " . $error);
+}
+
+if ($httpCode != 200) {
+    quantumLog("API HTTP ERROR: HTTP {$httpCode} | URL: {$url}");
+}
+
 curl_close($ch);
 
 // Parse JSON response
 if (!$error && $httpCode === 200 && is_string($response) && $response !== '') {
     $data = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        quantumLog(
+            "JSON ERROR: " . json_last_error_msg() .
+            " | Response: " . substr($response, 0, 1000)
+        );
+    }
+
     if (is_array($data)) {
         if (isset($data['data']['list'][0]) && is_array($data['data']['list'][0])) {
             $apidata = $data['data']['list'][0];
@@ -102,6 +144,13 @@ if (!$error && $httpCode === 200 && is_string($response) && $response !== '') {
             $apidata = $data['list'][0];
             $apiFetchOk = true;
         }
+    }
+
+    if (!$apiFetchOk) {
+        quantumLog(
+            "INVALID API RESPONSE STRUCTURE | URL: {$url} | Response: " .
+            substr($response ?? '', 0, 1000)
+        );
     }
 }
 ?>
